@@ -1,0 +1,20 @@
+{
+  "name": "claude-tokenstein",
+  "version": "0.2.0",
+  "description": "Track and report Claude token usage from local logs and the Anthropic Admin API",
+  "author": {
+    "name": "gunesbizim",
+    "url": "https://github.com/gunesbizim"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/gunesbizim/claude-tokenstein",
+  "homepage": "https://github.com/gunesbizim/claude-tokenstein",
+  "keywords": ["tokens", "usage", "billing", "cost", "analytics", "claude-code", "duckdb"],
+  "skills": "./commands/",
+  "mcpServers": {
+    "claude-tokenstein": {
+      "command": "node",
+      "args": ["../bin/claude-tokenstein.js", "mcp"]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "description": "claude-tokenstein session-start ingest hook",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh",
+            "statusMessage": "Ingesting Claude token usage..."
+          }
+        ]
+      }
+    ]
+  }
+}
