@@ -167,6 +167,43 @@ describe("renderHtmlReport", () => {
     conn.closeSync(); db.closeSync();
   });
 
+  it("handles unknown model with no price entry", async () => {
+    const { conn, db } = await freshConn("unknown-model");
+    await insertMessage(conn, {
+      ts: todayUtc(),
+      model: "totally-unknown-model",
+      input: 100,
+      output: 50,
+      cache_read: 1000,
+    });
+    const outPath = join(tmpDir, "report.html");
+    await renderHtmlReport(conn, TEST_PRICES, "usd", 1, outPath);
+
+    const html = await readFile(outPath, "utf8");
+    expect(html).toContain("totally-unknown-model");
+    conn.closeSync();
+    db.closeSync();
+  });
+
+  it("renders correctly with small token counts (<1000)", async () => {
+    const { conn, db } = await freshConn("small-tokens");
+    await insertMessage(conn, {
+      ts: todayUtc(),
+      model: "model-a",
+      input: 5,
+      output: 3,
+      cache_write: 0,
+      cache_read: 0,
+    });
+    const outPath = join(tmpDir, "report.html");
+    await renderHtmlReport(conn, TEST_PRICES, "usd", 1, outPath);
+
+    const html = await readFile(outPath, "utf8");
+    expect(html).toContain("\"input\":5");
+    conn.closeSync();
+    db.closeSync();
+  });
+
   it("cache-value class present in output (green cache reads)", async () => {
     const { conn, db } = await freshConn("cache-class");
     await insertMessage(conn, { ts: todayUtc(), model: "model-a", input: 0, output: 0, cache_read: 1_000_000 });
