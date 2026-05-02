@@ -11,7 +11,15 @@ export function computeRowCost(
   fxRate: number,
 ): string {
   const p = priceFor(prices, row.model);
-  const usd = costUsd(row, p);
+  const usd = costUsd(
+    {
+      input_tokens: row.input,
+      output_tokens: row.output,
+      cache_creation_input_tokens: row.cache_write,
+      cache_read_input_tokens: row.cache_read,
+    },
+    p,
+  );
   const amount = currency === "eur" ? costEur(usd, fxRate) : usd;
   return formatCurrency(amount, currency);
 }
