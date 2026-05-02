@@ -7,6 +7,8 @@ import { TokensteinError } from "./errors.js";
 import { openWriter, openReader, closeWriter } from "./db/duckdb.js";
 import { ingestClaudeCode } from "./ingest/orchestrator.js";
 import { loadPrices } from "./pricing/loader.js";
+import { getRate, fxFooter } from "./pricing/fx.js";
+import { loadConfig } from "./config.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -30,6 +32,16 @@ const program = new Command()
 
 function getCurrency(opts: { currency?: string }): "usd" | "eur" {
   return opts.currency === "eur" ? "eur" : "usd";
+}
+
+async function resolveRate(
+  conn: Parameters<typeof getRate>[0],
+  currency: "usd" | "eur",
+): Promise<{ rate: number; footer: string | null }> {
+  if (currency === "usd") return { rate: 1, footer: null };
+  const cfg = await loadConfig();
+  const fx = await getRate(conn, new Date(), { override: cfg.fx_override_usd_eur });
+  return { rate: fx.rate, footer: fxFooter(fx) };
 }
 
 program
@@ -68,11 +80,13 @@ program
     const currency = getCurrency(parentOpts);
     const conn = await openReader();
     const prices = await loadPrices();
+    const { rate, footer } = await resolveRate(conn, currency);
     const { renderReportCommand, collectReportCommand } = await import("./reports/report.js");
     const output = parentOpts.json
-      ? JSON.stringify(await collectReportCommand(conn, days, prices, currency, 1), null, 2)
-      : await renderReportCommand(conn, days, prices, currency, 1);
+      ? JSON.stringify(await collectReportCommand(conn, days, prices, currency, rate), null, 2)
+      : await renderReportCommand(conn, days, prices, currency, rate);
     console.log(output);
+    if (footer) console.log(footer);
     conn.closeSync();
   });
 
@@ -84,11 +98,13 @@ program
     const currency = getCurrency(parentOpts);
     const conn = await openReader();
     const prices = await loadPrices();
+    const { rate, footer } = await resolveRate(conn, currency);
     const { renderTodayCommand, collectTodayCommand } = await import("./reports/today.js");
     const output = parentOpts.json
-      ? JSON.stringify(await collectTodayCommand(conn, prices, currency, 1), null, 2)
-      : await renderTodayCommand(conn, prices, currency, 1);
+      ? JSON.stringify(await collectTodayCommand(conn, prices, currency, rate), null, 2)
+      : await renderTodayCommand(conn, prices, currency, rate);
     console.log(output);
+    if (footer) console.log(footer);
     conn.closeSync();
   });
 
@@ -100,8 +116,9 @@ program
     const currency = getCurrency(parentOpts);
     const conn = await openReader();
     const prices = await loadPrices();
+    const { rate } = await resolveRate(conn, currency);
     const { renderSessionCommand } = await import("./reports/session.js");
-    const output = await renderSessionCommand(conn, id, prices, currency, 1);
+    const output = await renderSessionCommand(conn, id, prices, currency, rate);
     console.log(output);
     conn.closeSync();
   });
@@ -145,10 +162,11 @@ program
     const currency = getCurrency(parentOpts);
     const conn = await openReader();
     const prices = await loadPrices();
+    const { rate, footer } = await resolveRate(conn, currency);
     const { renderCostCommand, collectCostCommand } = await import("./reports/cost.js");
     const output = parentOpts.json
       ? JSON.stringify(await collectCostCommand(conn, month), null, 2)
-      : await renderCostCommand(conn, month, prices, currency, 1);
+      : await renderCostCommand(conn, month, prices, currency, rate, footer ?? undefined);
     console.log(output);
     conn.closeSync();
   });
