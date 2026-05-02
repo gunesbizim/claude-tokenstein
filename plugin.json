@@ -1,0 +1,26 @@
+{
+  "name": "claude-tokenstein",
+  "version": "0.1.0",
+  "description": "Track and report Claude token usage from local logs and the Anthropic Admin API",
+  "commands": [
+    "commands/tokenstein-report.md",
+    "commands/tokenstein-today.md",
+    "commands/tokenstein-session.md",
+    "commands/tokenstein-hourly.md",
+    "commands/tokenstein-top.md",
+    "commands/tokenstein-cost.md",
+    "commands/tokenstein-ingest.md"
+  ],
+  "hooks": {
+    "sessionStart": {
+      "windows": "hooks/session-start.cmd",
+      "posix": "hooks/session-start.sh"
+    }
+  },
+  "mcpServers": {
+    "claude-tokenstein": {
+      "command": "node",
+      "args": ["./bin/claude-tokenstein.mjs", "mcp"]
+    }
+  }
+}
