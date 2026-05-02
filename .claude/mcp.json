@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "gitnexus": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/Users/gunesbizim/Desktop/projects/GitNexus/gitnexus/dist/cli/index.js",
+        "mcp"
+      ]
+    },
+    "claude-memory": {
+      "type": "stdio",
+      "command": "/Users/gunesbizim/.local/bin/claude-memory-serve"
+    },
+    "ouroboros": {
+      "command": "uvx",
+      "args": ["--from", "ouroboros-ai[all]", "ouroboros", "mcp", "serve"]
+    }
+  }
+}
