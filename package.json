@@ -1,0 +1,40 @@
+{
+  "name": "claude-tokenstein",
+  "version": "0.1.0",
+  "description": "Track and report Claude token usage from local logs and the Anthropic Admin API",
+  "type": "module",
+  "engines": { "node": ">=20.10" },
+  "os": ["win32", "darwin", "linux"],
+  "bin": { "claude-tokenstein": "./bin/claude-tokenstein.mjs" },
+  "files": ["bin", "src", "commands", "hooks", "plugin.json", ".mcp.json", "README.md", "LICENSE", "CHANGELOG.md"],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"*.md\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "dev": "tsx src/cli.ts",
+    "ingest": "tsx src/cli.ts ingest"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.5.2-r.1",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^12.0.0",
+    "proper-lockfile": "^4.1.2",
+    "undici": "^6.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/proper-lockfile": "^4.1.4",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}
