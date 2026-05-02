@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0] - 2026-05-02
+
+### Added
+- `ytd` command — year-to-date totals with daily sparkline
+- `all-time` command — all-time totals grouped by month
+- Slash commands `/tokenstein-ytd` and `/tokenstein-alltime`
+- Detailed README with full CLI reference, MCP docs, and troubleshooting guide
+
 ## [0.1.0] - 2026-05-02
 
 ### Added

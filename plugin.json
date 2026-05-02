@@ -1,10 +1,12 @@
 {
   "name": "claude-tokenstein",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Track and report Claude token usage from local logs and the Anthropic Admin API",
   "commands": [
-    "commands/tokenstein-report.md",
     "commands/tokenstein-today.md",
+    "commands/tokenstein-ytd.md",
+    "commands/tokenstein-alltime.md",
+    "commands/tokenstein-report.md",
     "commands/tokenstein-session.md",
     "commands/tokenstein-hourly.md",
     "commands/tokenstein-top.md",

@@ -157,6 +157,65 @@ export async function queryTop(
   }));
 }
 
+export async function queryYTD(conn: DuckDBConnection): Promise<DayRow[]> {
+  const reader = await conn.runAndReadAll(
+    `SELECT ts::DATE::VARCHAR              AS day,
+            model,
+            SUM(input_tokens)::BIGINT      AS input,
+            SUM(output_tokens)::BIGINT     AS output,
+            SUM(cache_creation_input_tokens)::BIGINT AS cache_write,
+            SUM(cache_read_input_tokens)::BIGINT     AS cache_read,
+            SUM(input_tokens + output_tokens)::BIGINT AS total
+     FROM messages
+     WHERE ts >= make_date(YEAR(CURRENT_DATE), 1, 1)::TIMESTAMP
+     GROUP BY day, model
+     ORDER BY day, model`,
+  );
+  return reader.getRowObjects().map((r) => ({
+    day: String(r["day"] ?? ""),
+    model: String(r["model"] ?? ""),
+    input: Number(r["input"] ?? 0),
+    output: Number(r["output"] ?? 0),
+    cache_write: Number(r["cache_write"] ?? 0),
+    cache_read: Number(r["cache_read"] ?? 0),
+    total: Number(r["total"] ?? 0),
+  }));
+}
+
+export interface MonthRow {
+  month: string;
+  model: string;
+  input: number;
+  output: number;
+  cache_write: number;
+  cache_read: number;
+  total: number;
+}
+
+export async function queryAllTime(conn: DuckDBConnection): Promise<MonthRow[]> {
+  const reader = await conn.runAndReadAll(
+    `SELECT strftime('%Y-%m', ts)          AS month,
+            model,
+            SUM(input_tokens)::BIGINT      AS input,
+            SUM(output_tokens)::BIGINT     AS output,
+            SUM(cache_creation_input_tokens)::BIGINT AS cache_write,
+            SUM(cache_read_input_tokens)::BIGINT     AS cache_read,
+            SUM(input_tokens + output_tokens)::BIGINT AS total
+     FROM messages
+     GROUP BY month, model
+     ORDER BY month, model`,
+  );
+  return reader.getRowObjects().map((r) => ({
+    month: String(r["month"] ?? ""),
+    model: String(r["model"] ?? ""),
+    input: Number(r["input"] ?? 0),
+    output: Number(r["output"] ?? 0),
+    cache_write: Number(r["cache_write"] ?? 0),
+    cache_read: Number(r["cache_read"] ?? 0),
+    total: Number(r["total"] ?? 0),
+  }));
+}
+
 export async function queryCost(
   conn: DuckDBConnection,
   year: number,
