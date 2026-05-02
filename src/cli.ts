@@ -9,6 +9,7 @@ import { ingestAll } from "./ingest/orchestrator.js";
 import { loadPrices } from "./pricing/loader.js";
 import { getRate, fxFooter } from "./pricing/fx.js";
 import { loadConfig } from "./config.js";
+import { reportPath } from "./db/paths.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -216,6 +217,30 @@ program
       ? JSON.stringify(await collectCostCommand(conn, month), null, 2)
       : await renderCostCommand(conn, month, prices, currency, rate, footer ?? undefined);
     console.log(output);
+    conn.closeSync();
+  });
+
+program
+  .command("html")
+  .description("Generate a self-contained HTML report for all time periods")
+  .option("--output <path>", "output file path", reportPath())
+  .option("--open", "open in browser after generation")
+  .action(async (opts: { output: string; open?: boolean }) => {
+    const parentOpts = program.opts<{ currency?: string }>();
+    const currency = getCurrency(parentOpts);
+    const conn = await openReader();
+    const prices = await loadPrices();
+    const { rate } = await resolveRate(conn, currency);
+    const { renderHtmlReport } = await import("./reports/html.js");
+    const outPath = await renderHtmlReport(conn, prices, currency, rate, opts.output);
+    console.log(`Report written to: ${outPath}`);
+    if (opts.open) {
+      const { exec } = await import("node:child_process");
+      const opener =
+        process.platform === "win32" ? "start" :
+        process.platform === "darwin" ? "open" : "xdg-open";
+      exec(`${opener} "${outPath}"`);
+    }
     conn.closeSync();
   });
 

@@ -18,6 +18,7 @@ import { renderSessionCommand } from "../reports/session.js";
 import { renderHourlyCommand } from "../reports/hourly.js";
 import { renderTopCommand } from "../reports/top.js";
 import { renderCostCommand } from "../reports/cost.js";
+import { reportPath } from "../db/paths.js";
 
 function parseCurrency(args: Record<string, unknown>): "usd" | "eur" {
   return args["currency"] === "eur" ? "eur" : "usd";
@@ -123,6 +124,18 @@ export async function startMcpServer(): Promise<void> {
           properties: {
             month: { type: "string", description: "Month in YYYY-MM format" },
             currency: { type: "string", enum: ["usd", "eur"] },
+          },
+        },
+      },
+      {
+        name: "tokenstein_html",
+        description: "Generate a self-contained HTML report covering all time periods (today, week, month, quarter, YTD, all-time). Returns the path to the written file.",
+        inputSchema: {
+          type: "object" as const,
+          properties: {
+            currency: { type: "string", enum: ["usd", "eur"] },
+            output: { type: "string", description: "Output file path (default: ~/.claude-tokenstein/report.html)" },
+            open: { type: "boolean", description: "Open in browser after generation (default: false)" },
           },
         },
       },
@@ -249,6 +262,29 @@ export async function startMcpServer(): Promise<void> {
         const { rate, footer } = await resolveRate(conn, currency);
         const out = await renderCostCommand(conn, month, prices, currency, rate, footer ?? undefined);
         return textResult(out);
+      } finally {
+        conn.closeSync();
+      }
+    }
+
+    if (name === "tokenstein_html") {
+      const currency = parseCurrency(args);
+      const outPath = typeof args["output"] === "string" ? args["output"] : reportPath();
+      const shouldOpen = args["open"] === true;
+      const conn = await openReader();
+      try {
+        const prices = await loadPrices();
+        const { rate } = await resolveRate(conn, currency);
+        const { renderHtmlReport } = await import("../reports/html.js");
+        const written = await renderHtmlReport(conn, prices, currency, rate, outPath);
+        if (shouldOpen) {
+          const { exec } = await import("node:child_process");
+          const opener =
+            process.platform === "win32" ? "start" :
+            process.platform === "darwin" ? "open" : "xdg-open";
+          exec(`${opener} "${written}"`);
+        }
+        return textResult(`HTML report written to: ${written}`);
       } finally {
         conn.closeSync();
       }
