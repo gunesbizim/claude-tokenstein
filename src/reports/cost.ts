@@ -23,7 +23,7 @@ export async function renderCostCommand(
   if (rows.length === 0) return `No data for ${month}.`;
 
   const table = renderTable(
-    ["Model", "Input", "Output", "CacheW", "CacheR", "Turns", `Cost (${currency.toUpperCase()})`],
+    ["Model", "Input", "Output", "CacheW", "CacheR", "Total", "Turns", `Cost (${currency.toUpperCase()})`],
     rows.map((r) => modelRowToTableRow(r, prices, currency, fxRate)),
   );
 

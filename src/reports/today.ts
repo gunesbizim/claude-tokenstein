@@ -13,12 +13,11 @@ export async function renderTodayCommand(
   const rows = await queryToday(conn);
   if (rows.length === 0) return "No usage recorded today.";
 
-  const totalInput = rows.reduce((a, r) => a + r.input, 0);
-  const totalOutput = rows.reduce((a, r) => a + r.output, 0);
-  const header = `Today — ${formatTokens(totalInput + totalOutput)} total tokens`;
+  const totalAll = rows.reduce((a, r) => a + r.input + r.output + r.cache_write + r.cache_read, 0);
+  const header = `Today — ${formatTokens(totalAll)} total tokens`;
 
   const table = renderTable(
-    ["Model", "Input", "Output", "CacheW", "CacheR", "Turns", "Cost"],
+    ["Model", "Input", "Output", "CacheW", "CacheR", "Total", "Turns", "Cost"],
     rows.map((r) => modelRowToTableRow(r, prices, currency, fxRate)),
   );
 

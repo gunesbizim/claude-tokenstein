@@ -25,7 +25,7 @@ export function computeRowCost(
 }
 
 export function totalTokens(row: ModelRow): number {
-  return row.input + row.output;
+  return row.input + row.output + row.cache_write + row.cache_read;
 }
 
 export function modelRowToTableRow(
@@ -40,6 +40,7 @@ export function modelRowToTableRow(
     formatTokens(row.output),
     formatTokens(row.cache_write),
     formatTokens(row.cache_read),
+    formatTokens(row.input + row.output + row.cache_write + row.cache_read),
     String(row.turns),
     computeRowCost(row, prices, currency, fxRate),
   ];

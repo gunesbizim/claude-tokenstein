@@ -8,6 +8,7 @@ export interface DayRow {
   cache_write: number;
   cache_read: number;
   total: number;
+  total_all: number;
 }
 
 export interface ModelRow {
@@ -39,7 +40,8 @@ export async function queryReport(conn: DuckDBConnection, days: number): Promise
             SUM(output_tokens)::BIGINT     AS output,
             SUM(cache_creation_input_tokens)::BIGINT AS cache_write,
             SUM(cache_read_input_tokens)::BIGINT     AS cache_read,
-            SUM(input_tokens + output_tokens)::BIGINT AS total
+            SUM(input_tokens + output_tokens)::BIGINT AS total,
+            SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens)::BIGINT AS total_all
      FROM messages
      WHERE ts >= (CURRENT_DATE - INTERVAL (${days.toString()}) DAY)::TIMESTAMP
      GROUP BY day, model
@@ -53,6 +55,7 @@ export async function queryReport(conn: DuckDBConnection, days: number): Promise
     cache_write: Number(r["cache_write"] ?? 0),
     cache_read: Number(r["cache_read"] ?? 0),
     total: Number(r["total"] ?? 0),
+    total_all: Number(r["total_all"] ?? 0),
   }));
 }
 
@@ -113,7 +116,7 @@ export async function querySession(
 export async function queryHourly(conn: DuckDBConnection): Promise<HourRow[]> {
   const reader = await conn.runAndReadAll(
     `SELECT date_trunc('hour', ts)::VARCHAR           AS hour,
-            SUM(input_tokens + output_tokens)::BIGINT AS total
+            SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens)::BIGINT AS total
      FROM messages
      WHERE ts >= (NOW() - INTERVAL 24 HOUR)
      GROUP BY date_trunc('hour', ts)
@@ -140,7 +143,7 @@ export async function queryTop(
   if (!col) throw new Error(`Invalid --by value: ${by}. Use session|project|model`);
   const reader = await conn.runAndReadAll(
     `SELECT ${col}                                      AS bucket,
-            SUM(input_tokens + output_tokens)::BIGINT  AS total_tokens,
+            SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens)::BIGINT AS total_tokens,
             COUNT(*)::BIGINT                            AS turns,
             MAX(ts)::VARCHAR                            AS last_seen
      FROM messages
@@ -165,7 +168,8 @@ export async function queryYTD(conn: DuckDBConnection): Promise<DayRow[]> {
             SUM(output_tokens)::BIGINT     AS output,
             SUM(cache_creation_input_tokens)::BIGINT AS cache_write,
             SUM(cache_read_input_tokens)::BIGINT     AS cache_read,
-            SUM(input_tokens + output_tokens)::BIGINT AS total
+            SUM(input_tokens + output_tokens)::BIGINT AS total,
+            SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens)::BIGINT AS total_all
      FROM messages
      WHERE ts >= make_date(YEAR(CURRENT_DATE), 1, 1)::TIMESTAMP
      GROUP BY day, model
@@ -179,6 +183,7 @@ export async function queryYTD(conn: DuckDBConnection): Promise<DayRow[]> {
     cache_write: Number(r["cache_write"] ?? 0),
     cache_read: Number(r["cache_read"] ?? 0),
     total: Number(r["total"] ?? 0),
+    total_all: Number(r["total_all"] ?? 0),
   }));
 }
 
@@ -190,6 +195,7 @@ export interface MonthRow {
   cache_write: number;
   cache_read: number;
   total: number;
+  total_all: number;
 }
 
 export async function queryAllTime(conn: DuckDBConnection): Promise<MonthRow[]> {
@@ -200,7 +206,8 @@ export async function queryAllTime(conn: DuckDBConnection): Promise<MonthRow[]> 
             SUM(output_tokens)::BIGINT     AS output,
             SUM(cache_creation_input_tokens)::BIGINT AS cache_write,
             SUM(cache_read_input_tokens)::BIGINT     AS cache_read,
-            SUM(input_tokens + output_tokens)::BIGINT AS total
+            SUM(input_tokens + output_tokens)::BIGINT AS total,
+            SUM(input_tokens + output_tokens + cache_creation_input_tokens + cache_read_input_tokens)::BIGINT AS total_all
      FROM messages
      GROUP BY month, model
      ORDER BY month, model`,
@@ -213,6 +220,7 @@ export async function queryAllTime(conn: DuckDBConnection): Promise<MonthRow[]> 
     cache_write: Number(r["cache_write"] ?? 0),
     cache_read: Number(r["cache_read"] ?? 0),
     total: Number(r["total"] ?? 0),
+    total_all: Number(r["total_all"] ?? 0),
   }));
 }
 

@@ -26,11 +26,10 @@ export async function renderSessionCommand(
   const header = `Session ${sid} — ${totalTurns} turns`;
 
   const table = renderTable(
-    ["Model", "Input", "Output", "CacheW", "CacheR", "Turns", "Cost"],
+    ["Model", "Input", "Output", "CacheW", "CacheR", "Total", "Turns", "Cost"],
     rows.map((r) => modelRowToTableRow(r, prices, currency, fxRate)),
   );
 
-  const totalIn = rows.reduce((a, r) => a + r.input, 0);
-  const totalOut = rows.reduce((a, r) => a + r.output, 0);
-  return `${header} — ${formatTokens(totalIn + totalOut)} total tokens\n\n${table}`;
+  const totalAll = rows.reduce((a, r) => a + r.input + r.output + r.cache_write + r.cache_read, 0);
+  return `${header} — ${formatTokens(totalAll)} total tokens\n\n${table}`;
 }

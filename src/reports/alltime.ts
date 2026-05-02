@@ -15,14 +15,14 @@ export async function renderAllTimeCommand(
 
   const byMonth = new Map<string, number>();
   for (const r of rows) {
-    byMonth.set(r.month, (byMonth.get(r.month) ?? 0) + r.total);
+    byMonth.set(r.month, (byMonth.get(r.month) ?? 0) + r.total_all);
   }
   const months_sorted = [...byMonth.keys()].sort();
   const sparkValues = months_sorted.map((m) => byMonth.get(m) ?? 0);
   const spark = renderSparkline(sparkValues);
 
   const table = renderTable(
-    ["Month", "Model", "Input", "Output", "CacheW", "CacheR", "Total", "Cost"],
+    ["Month", "Model", "Input", "Output", "CacheW", "CacheR", "Total (gen)", "Total (all)", "Cost"],
     rows.map((r) => [
       r.month,
       r.model,
@@ -31,6 +31,7 @@ export async function renderAllTimeCommand(
       formatTokens(r.cache_write),
       formatTokens(r.cache_read),
       formatTokens(r.total),
+      formatTokens(r.total_all),
       computeRowCost({ model: r.model, input: r.input, output: r.output, cache_write: r.cache_write, cache_read: r.cache_read, turns: 0 }, prices, currency, fxRate),
     ]),
   );
