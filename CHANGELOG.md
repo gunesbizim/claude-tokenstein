@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.1] - 2026-05-02
+
+### Added
+- Test suite expanded from 70 to 224 tests across 8 new test files
+- `@vitest/coverage-v8` with thresholds: 90% statements/functions/lines, 70% branches
+- `weekStart`, `monthStart`, `quarterStart`, `tomorrow` exported from `src/reports/html-queries.ts` with default `now: Date = new Date()` parameter for testability
+
+### Changed
+- Coverage lifted to 93.48% statements / 70.86% branches / 93.12% functions / 94.70% lines (from 78.49% / 54.62% / 70.00% / 81.21%)
+
 ## [0.4.0] - 2026-05-02
 
 ### Added
