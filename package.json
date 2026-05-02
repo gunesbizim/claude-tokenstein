@@ -5,7 +5,7 @@
   "type": "module",
   "engines": { "node": ">=20.10" },
   "os": ["win32", "darwin", "linux"],
-  "bin": { "claude-tokenstein": "./bin/claude-tokenstein.mjs" },
+  "bin": { "claude-tokenstein": "./bin/claude-tokenstein.js" },
   "files": ["bin", "src", "commands", "hooks", "plugin.json", ".mcp.json", "README.md", "LICENSE", "CHANGELOG.md"],
   "scripts": {
     "typecheck": "tsc --noEmit",
