@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.1] - 2026-05-02
+
+### Changed
+- Bump esbuild 0.21.5 → 0.27.7 and vitest 1 → 4 (transitive dep security updates)
+
 ## [0.2.0] - 2026-05-02
 
 ### Added
