@@ -2,7 +2,7 @@
   "mcpServers": {
     "claude-tokenstein": {
       "command": "node",
-      "args": ["./bin/claude-tokenstein.mjs", "mcp"]
+      "args": ["./bin/claude-tokenstein.js", "mcp"]
     }
   }
 }
