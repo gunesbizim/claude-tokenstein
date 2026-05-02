@@ -40,7 +40,7 @@ function textResult(text: string) {
 
 export async function startMcpServer(): Promise<void> {
   const server = new Server(
-    { name: "claude-tokenstein", version: "0.2.0" },
+    { name: "claude-tokenstein", version: "0.4.0" },
     { capabilities: { tools: {} } },
   );
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0] - 2026-05-02
+
+### Added
+- `html` CLI command — generates a fully self-contained single-file HTML report covering Today, This Week, This Month, This Quarter, YTD, and LTD (all-time)
+- `tokenstein_html` MCP tool — same report accessible via MCP with `currency`, `output`, and `open` parameters
+- `/tokenstein-html` slash command skill
+- Per-period interactive tabs with Chart.js charts (stacked bar, doughnut cost split, token breakdown grouped bar, trend line for YTD/LTD) — all embedded inline, no CDN, fully offline
+- Cache read costs shown in green throughout HTML report to highlight their ~10% discount vs standard input pricing
+
+### Fixed
+- All report commands (`today`, `session`, `report`, `ytd`, `all-time`, `cost`) now show a **Total** column counting all four token types (input + output + cache_write + cache_read) — previously only input + output were counted
+- `all-time` and `ytd` tables now show both **Total (gen)** and **Total (all)** columns
+- Hourly and top commands now include cache tokens in their totals
+
 ## [0.3.0] - 2026-05-02
 
 ### Added

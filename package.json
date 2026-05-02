@@ -1,6 +1,6 @@
 {
   "name": "claude-tokenstein",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Track and report Claude token usage from local logs and the Anthropic Admin API",
   "type": "module",
   "engines": {
