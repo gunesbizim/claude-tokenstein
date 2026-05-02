@@ -5,7 +5,7 @@ export interface HtmlDayRow extends DayRow {
   turns: number;
 }
 
-function weekStart(now: Date): Date {
+export function weekStart(now: Date = new Date()): Date {
   const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const dow = d.getUTCDay();
   const diff = dow === 0 ? 6 : dow - 1;
@@ -13,17 +13,17 @@ function weekStart(now: Date): Date {
   return d;
 }
 
-function monthStart(now: Date): Date {
+export function monthStart(now: Date = new Date()): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
-function quarterStart(now: Date): Date {
+export function quarterStart(now: Date = new Date()): Date {
   const m = now.getUTCMonth();
   const qm = Math.floor(m / 3) * 3;
   return new Date(Date.UTC(now.getUTCFullYear(), qm, 1));
 }
 
-function tomorrow(now: Date): Date {
+export function tomorrow(now: Date = new Date()): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
 }
 
