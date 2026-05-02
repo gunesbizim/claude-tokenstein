@@ -10,6 +10,8 @@ export const lockPath = () => join(ROOT, "ingest.lock");
 export const logPath = () => join(ROOT, "logs", "ingest.log");
 export const pricesOverridePath = () => join(ROOT, "prices.json");
 
+export const reportPath = () => join(ROOT, "report.html");
+
 export async function ensureRuntimeDir(): Promise<void> {
   await mkdir(join(ROOT, "logs"), { recursive: true, mode: 0o700 });
 }
