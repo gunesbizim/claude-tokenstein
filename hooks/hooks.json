@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh",
+            "command": "node -e \"const {execFileSync,spawnSync}=require('child_process'),p=process.env.CLAUDE_PLUGIN_ROOT;process.platform==='win32'?spawnSync('cmd.exe',['/c',p+'\\\\hooks\\\\session-start.cmd'],{detached:true,stdio:'ignore'}):spawnSync('bash',[p+'/hooks/session-start.sh'],{detached:true,stdio:'ignore'})\"",
             "statusMessage": "Ingesting Claude token usage..."
           }
         ]
