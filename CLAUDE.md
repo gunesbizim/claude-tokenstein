@@ -1,3 +1,6 @@
+# Project Rules:
+- Never use Co:Author Claude. 
+
 <!-- git-memory:start -->
 
 # Git Memory System
