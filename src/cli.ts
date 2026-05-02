@@ -5,7 +5,7 @@ import { Command } from "commander";
 import { initLogger, log } from "./log.js";
 import { TokensteinError } from "./errors.js";
 import { openWriter, openReader, closeWriter } from "./db/duckdb.js";
-import { ingestClaudeCode } from "./ingest/orchestrator.js";
+import { ingestAll } from "./ingest/orchestrator.js";
 import { loadPrices } from "./pricing/loader.js";
 import { getRate, fxFooter } from "./pricing/fx.js";
 import { loadConfig } from "./config.js";
@@ -53,15 +53,27 @@ program
   .option("--with-lock", "acquire JS lockfile")
   .action(
     async (opts: { sinceLast: boolean; source: string; dryRun?: boolean; withLock?: boolean }) => {
+      const cfg = await loadConfig();
       const conn = await openWriter();
       try {
-        if (opts.source === "claude_code" || opts.source === "all") {
-          const stats = await ingestClaudeCode(conn, { dryRun: opts.dryRun });
+        const results = await ingestAll(conn, {
+          source: opts.source as "claude_code" | "admin_api" | "all",
+          dryRun: opts.dryRun,
+          adminApiKey: cfg.admin_api_key,
+          lookbackDays: cfg.ingest.max_admin_api_lookback_days,
+        });
+        if (results.claudeCode) {
+          const s = results.claudeCode;
           console.log(
-            `ingest done — files:${stats.filesScanned} messages:${stats.messagesInserted} ` +
-              `prompts:${stats.promptsInserted} dt:${stats.durationMs}ms`,
+            `claude_code — files:${s.filesScanned} messages:${s.messagesInserted} ` +
+              `prompts:${s.promptsInserted} dt:${s.durationMs}ms`,
           );
-          log.info("ingest.done", stats);
+          log.info("ingest.claude_code.done", s);
+        }
+        if (results.adminApi) {
+          const s = results.adminApi;
+          console.log(`admin_api — messages:${s.messagesInserted} buckets:${s.linesRead}`);
+          log.info("ingest.admin_api.done", s);
         }
       } finally {
         conn.closeSync();

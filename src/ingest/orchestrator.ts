@@ -1,7 +1,9 @@
 import type { DuckDBConnection } from "@duckdb/node-api";
 import { globProjects } from "./walk.js";
 import { ingestFile } from "./claude-code.js";
+import { ingestAdminApi } from "./admin-api.js";
 import type { IngestStats } from "./types.js";
+import { log } from "../log.js";
 
 export async function ingestClaudeCode(
   conn: DuckDBConnection,
@@ -48,4 +50,37 @@ export async function ingestClaudeCode(
 
   total.durationMs = Date.now() - start;
   return total;
+}
+
+export async function ingestAll(
+  conn: DuckDBConnection,
+  opts: {
+    source: "claude_code" | "admin_api" | "all";
+    dryRun?: boolean;
+    adminApiKey?: string;
+    lookbackDays?: number;
+  },
+): Promise<{ claudeCode?: IngestStats; adminApi?: { messagesInserted: number; linesRead: number } }> {
+  const results: {
+    claudeCode?: IngestStats;
+    adminApi?: { messagesInserted: number; linesRead: number };
+  } = {};
+
+  if (opts.source === "claude_code" || opts.source === "all") {
+    results.claudeCode = await ingestClaudeCode(conn, { dryRun: opts.dryRun });
+  }
+
+  if (opts.source === "admin_api" || opts.source === "all") {
+    if (!opts.adminApiKey) {
+      log.warn("admin_api.skip", { reason: "no admin_api_key configured" });
+    } else {
+      results.adminApi = await ingestAdminApi(conn, {
+        apiKey: opts.adminApiKey,
+        lookbackDays: opts.lookbackDays ?? 30,
+        dryRun: opts.dryRun,
+      });
+    }
+  }
+
+  return results;
 }
