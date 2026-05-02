@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-tokenstein",
+  "description": "Track and report Claude token usage from local logs and the Anthropic Admin API.",
+  "owner": {
+    "name": "gunesbizim",
+    "url": "https://github.com/gunesbizim"
+  },
+  "plugins": [
+    {
+      "name": "claude-tokenstein",
+      "description": "Track Claude token usage with 9 slash commands: today, ytd, all-time, report, cost, session, hourly, top, ingest.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
