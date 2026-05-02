@@ -167,6 +167,42 @@ program
   });
 
 program
+  .command("ytd")
+  .description("Year-to-date token totals with daily sparkline")
+  .action(async () => {
+    const parentOpts = program.opts<{ currency?: string; json?: boolean }>();
+    const currency = getCurrency(parentOpts);
+    const conn = await openReader();
+    const prices = await loadPrices();
+    const { rate, footer } = await resolveRate(conn, currency);
+    const { renderYTDCommand, collectYTDCommand } = await import("./reports/ytd.js");
+    const output = parentOpts.json
+      ? JSON.stringify(await collectYTDCommand(conn, prices, currency, rate), null, 2)
+      : await renderYTDCommand(conn, prices, currency, rate);
+    console.log(output);
+    if (footer) console.log(footer);
+    conn.closeSync();
+  });
+
+program
+  .command("all-time")
+  .description("All-time token totals grouped by month")
+  .action(async () => {
+    const parentOpts = program.opts<{ currency?: string; json?: boolean }>();
+    const currency = getCurrency(parentOpts);
+    const conn = await openReader();
+    const prices = await loadPrices();
+    const { rate, footer } = await resolveRate(conn, currency);
+    const { renderAllTimeCommand, collectAllTimeCommand } = await import("./reports/alltime.js");
+    const output = parentOpts.json
+      ? JSON.stringify(await collectAllTimeCommand(conn, prices, currency, rate), null, 2)
+      : await renderAllTimeCommand(conn, prices, currency, rate);
+    console.log(output);
+    if (footer) console.log(footer);
+    conn.closeSync();
+  });
+
+program
   .command("cost <month>")
   .description("Per-model cost breakdown for YYYY-MM")
   .action(async (month: string) => {
