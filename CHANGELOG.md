@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.2] - 2026-05-02
+
+### Fixed
+- SessionStart hook now fires on Windows — replaced bash-only command with a cross-platform Node.js dispatcher that routes to `session-start.cmd` on win32 and `session-start.sh` on POSIX
+
 ## [0.2.1] - 2026-05-02
 
 ### Changed
