@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0] - 2026-05-02
+
+### Added
+- MCP server now exposes all 9 report commands as MCP tools (`tokenstein_today`, `tokenstein_ytd`, `tokenstein_alltime`, `tokenstein_report`, `tokenstein_session`, `tokenstein_hourly`, `tokenstein_top`, `tokenstein_cost`, `tokenstein_ingest`)
+
+### Fixed
+- Slash commands no longer loop or fail silently on Claude Code desktop (macOS/Windows) — commands now call MCP tools directly instead of `!bash` invocations that could not resolve the CLI binary or recursed into the slash-command system
+
 ## [0.2.2] - 2026-05-02
 
 ### Fixed
