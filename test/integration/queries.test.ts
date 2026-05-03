@@ -12,6 +12,8 @@ import {
   queryHourly,
   queryTop,
   queryCost,
+  queryYTD,
+  queryAllTime,
 } from "../../src/reports/queries.js";
 
 let tmpDir: string;
@@ -459,6 +461,200 @@ describe("queryCost", () => {
     const rows = await queryCost(conn, 2025, 4);
     expect(rows[0]?.cache_write).toBe(1000);
     expect(rows[0]?.cache_read).toBe(5000);
+    conn.closeSync();
+    db.closeSync();
+  });
+});
+
+// ─── Null-fallback arm coverage ──────────────────────────────────────────────
+// Each query maps row objects with `?? ""` / `?? 0` fallbacks.  When the DB
+// columns are NOT NULL those null arms are never taken and branch coverage
+// stays at ~51%.  The tests below drop NOT NULL constraints on a fresh DB and
+// insert rows with explicit NULLs so that every fallback arm is exercised.
+
+async function relaxNotNull(conn: DuckDBConnection): Promise<void> {
+  // Drop indexes that prevent ALTER TABLE on the messages table, then re-create
+  // them after relaxing NOT NULL so foreign tests still benefit from indexing.
+  for (const idx of ["idx_msgs_ts", "idx_msgs_session", "idx_msgs_project", "idx_msgs_model"]) {
+    await conn.run(`DROP INDEX IF EXISTS ${idx}`);
+  }
+  for (const col of [
+    "model",
+    "input_tokens",
+    "output_tokens",
+    "cache_creation_input_tokens",
+    "cache_read_input_tokens",
+  ]) {
+    await conn.run(`ALTER TABLE messages ALTER COLUMN ${col} DROP NOT NULL`);
+  }
+}
+
+describe("queryReport — null fallback arms", () => {
+  it("row mapper falls back to defaults when columns are NULL", async () => {
+    const { conn, db } = await freshConn("report-null");
+    await relaxNotNull(conn);
+    await conn.run(
+      `INSERT INTO messages (id, session_id, project_cwd, ts, model, source,
+         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens)
+       VALUES (gen_random_uuid(), 'sess', '/p', ?::TIMESTAMP, NULL, 'test', NULL, NULL, NULL, NULL)`,
+      [`${today} 10:00:00`],
+    );
+    const rows = await queryReport(conn, 7);
+    expect(rows[0]?.model).toBe("");
+    expect(rows[0]?.input).toBe(0);
+    expect(rows[0]?.output).toBe(0);
+    expect(rows[0]?.cache_write).toBe(0);
+    expect(rows[0]?.cache_read).toBe(0);
+    expect(rows[0]?.total).toBe(0);
+    expect(rows[0]?.total_all).toBe(0);
+    conn.closeSync();
+    db.closeSync();
+  });
+});
+
+describe("queryToday — null fallback arms", () => {
+  it("row mapper falls back to defaults when columns are NULL", async () => {
+    const { conn, db } = await freshConn("today-null");
+    await relaxNotNull(conn);
+    await conn.run(
+      `INSERT INTO messages (id, session_id, project_cwd, ts, model, source,
+         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens)
+       VALUES (gen_random_uuid(), 'sess', '/p', ?::TIMESTAMP, NULL, 'test', NULL, NULL, NULL, NULL)`,
+      [`${today} 10:00:00`],
+    );
+    const rows = await queryToday(conn);
+    expect(rows[0]?.model).toBe("");
+    expect(rows[0]?.input).toBe(0);
+    expect(rows[0]?.output).toBe(0);
+    expect(rows[0]?.cache_write).toBe(0);
+    expect(rows[0]?.cache_read).toBe(0);
+    expect(rows[0]?.turns).toBe(1);
+    conn.closeSync();
+    db.closeSync();
+  });
+});
+
+describe("querySession — null fallback arms", () => {
+  it("row mapper falls back to defaults when columns are NULL", async () => {
+    const { conn, db } = await freshConn("session-null");
+    await relaxNotNull(conn);
+    await conn.run(
+      `INSERT INTO messages (id, session_id, project_cwd, ts, model, source,
+         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens)
+       VALUES (gen_random_uuid(), 'null-sess', '/p', ?::TIMESTAMP, NULL, 'test', NULL, NULL, NULL, NULL)`,
+      [`${today} 10:00:00`],
+    );
+    const rows = await querySession(conn, "null-sess");
+    expect(rows[0]?.model).toBe("");
+    expect(rows[0]?.input).toBe(0);
+    expect(rows[0]?.output).toBe(0);
+    expect(rows[0]?.cache_write).toBe(0);
+    expect(rows[0]?.cache_read).toBe(0);
+    conn.closeSync();
+    db.closeSync();
+  });
+});
+
+describe("queryHourly — null fallback arms", () => {
+  it("row mapper falls back to 0 total when token columns are NULL", async () => {
+    const { conn, db } = await freshConn("hourly-null");
+    await relaxNotNull(conn);
+    const oneHourAgo = new Date(Date.now() - 3600_000);
+    await conn.run(
+      `INSERT INTO messages (id, session_id, project_cwd, ts, model, source,
+         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens)
+       VALUES (gen_random_uuid(), 'sess', '/p', ?::TIMESTAMP, 'm', 'test', NULL, NULL, NULL, NULL)`,
+      [oneHourAgo.toISOString()],
+    );
+    const rows = await queryHourly(conn);
+    expect(rows[0]?.total).toBe(0);
+    conn.closeSync();
+    db.closeSync();
+  });
+});
+
+describe("queryTop — null fallback arms", () => {
+  it("row mapper falls back to 0 and empty string when columns are NULL", async () => {
+    const { conn, db } = await freshConn("top-null");
+    await relaxNotNull(conn);
+    await conn.run(
+      `INSERT INTO messages (id, session_id, project_cwd, ts, model, source,
+         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens)
+       VALUES (gen_random_uuid(), 'sess', '/p', ?::TIMESTAMP, NULL, 'test', NULL, NULL, NULL, NULL)`,
+      [`${today} 10:00:00`],
+    );
+    // model IS the bucket column here; NULL model is included because WHERE model IS NOT NULL filters it
+    // Use session grouping instead so the bucket is non-null but tokens are null
+    const rows = await queryTop(conn, "session", 5);
+    expect(rows[0]?.total_tokens).toBe(0);
+    expect(rows[0]?.turns).toBe(1);
+    conn.closeSync();
+    db.closeSync();
+  });
+});
+
+describe("queryYTD — null fallback arms", () => {
+  it("row mapper falls back to defaults when columns are NULL", async () => {
+    const { conn, db } = await freshConn("ytd-null");
+    await relaxNotNull(conn);
+    const thisYear = new Date().getFullYear();
+    await conn.run(
+      `INSERT INTO messages (id, session_id, project_cwd, ts, model, source,
+         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens)
+       VALUES (gen_random_uuid(), 'sess', '/p', ?::TIMESTAMP, NULL, 'test', NULL, NULL, NULL, NULL)`,
+      [`${thisYear}-03-15 10:00:00`],
+    );
+    const rows = await queryYTD(conn);
+    expect(rows[0]?.model).toBe("");
+    expect(rows[0]?.input).toBe(0);
+    expect(rows[0]?.output).toBe(0);
+    expect(rows[0]?.cache_write).toBe(0);
+    expect(rows[0]?.cache_read).toBe(0);
+    expect(rows[0]?.total).toBe(0);
+    expect(rows[0]?.total_all).toBe(0);
+    conn.closeSync();
+    db.closeSync();
+  });
+});
+
+describe("queryAllTime — null fallback arms", () => {
+  it("row mapper falls back to defaults when columns are NULL", async () => {
+    const { conn, db } = await freshConn("alltime-null");
+    await relaxNotNull(conn);
+    await conn.run(
+      `INSERT INTO messages (id, session_id, project_cwd, ts, model, source,
+         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens)
+       VALUES (gen_random_uuid(), 'sess', '/p', '2024-06-15 10:00:00'::TIMESTAMP, NULL, 'test', NULL, NULL, NULL, NULL)`,
+    );
+    const rows = await queryAllTime(conn);
+    expect(rows[0]?.model).toBe("");
+    expect(rows[0]?.input).toBe(0);
+    expect(rows[0]?.output).toBe(0);
+    expect(rows[0]?.cache_write).toBe(0);
+    expect(rows[0]?.cache_read).toBe(0);
+    expect(rows[0]?.total).toBe(0);
+    expect(rows[0]?.total_all).toBe(0);
+    conn.closeSync();
+    db.closeSync();
+  });
+});
+
+describe("queryCost — null fallback arms", () => {
+  it("row mapper falls back to defaults when columns are NULL", async () => {
+    const { conn, db } = await freshConn("cost-null");
+    await relaxNotNull(conn);
+    await conn.run(
+      `INSERT INTO messages (id, session_id, project_cwd, ts, model, source,
+         input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens)
+       VALUES (gen_random_uuid(), 'sess', '/p', '2025-05-10 10:00:00'::TIMESTAMP, NULL, 'test', NULL, NULL, NULL, NULL)`,
+    );
+    const rows = await queryCost(conn, 2025, 5);
+    expect(rows[0]?.model).toBe("");
+    expect(rows[0]?.input).toBe(0);
+    expect(rows[0]?.output).toBe(0);
+    expect(rows[0]?.cache_write).toBe(0);
+    expect(rows[0]?.cache_read).toBe(0);
+    expect(rows[0]?.turns).toBe(1);
     conn.closeSync();
     db.closeSync();
   });
