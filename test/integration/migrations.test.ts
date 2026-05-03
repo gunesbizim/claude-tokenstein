@@ -48,4 +48,5 @@ describe("runMigrations", () => {
     conn.closeSync();
     db.closeSync();
   });
+
 });

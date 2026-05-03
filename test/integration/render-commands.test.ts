@@ -297,4 +297,23 @@ describe("renderCostCommand", () => {
     await expect(collectCostCommand(conn, "foo")).rejects.toThrow(/Invalid month/);
     conn.closeSync(); db.closeSync();
   });
+
+  it("collectCostCommand returns rows for a valid month with data (line 48 branch)", async () => {
+    const { conn, db } = await freshConn("cost-collect-valid");
+    await insertMessage(conn, { ts: "2025-07-10 10:00:00", model: "m-a", input: 500_000, output: 0 });
+    const rows = (await collectCostCommand(conn, "2025-07")) as Array<{ model: string }>;
+    expect(Array.isArray(rows)).toBe(true);
+    expect(rows.length).toBeGreaterThan(0);
+    conn.closeSync(); db.closeSync();
+  });
+
+  it("currency=eur without fxSource omits FX footer (renderCostCommand EUR no-fxSource branch)", async () => {
+    const { conn, db } = await freshConn("cost-eur-no-fxsource");
+    await insertMessage(conn, { ts: "2025-06-15 10:00:00", model: "m-a", input: 1_000_000, output: 0 });
+    // Pass currency=eur but no fxSource — the `currency === "eur" && fxSource` condition is false
+    const out = await renderCostCommand(conn, "2025-06", PRICES, "eur", 0.92);
+    expect(out).not.toContain("FX source");
+    expect(out).toContain("2025-06");
+    conn.closeSync(); db.closeSync();
+  });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdir, writeFile, rm, readFile, access } from "node:fs/promises";
 import { dirname } from "node:path";
-import { loadPrices, priceFor } from "../../src/pricing/loader.js";
+import { loadPrices, priceFor, canonicalModelId } from "../../src/pricing/loader.js";
 import { pricesOverridePath } from "../../src/db/paths.js";
 
 const overridePath = pricesOverridePath();
@@ -142,5 +142,43 @@ describe("priceFor", () => {
       "claude-opus-4-5": { input: 1.0, output: 2.0, cache_write: 1.5, cache_read: 0.1 },
     };
     expect(priceFor(table, "claude-opus-4-5-20250929")).toBeDefined();
+  });
+});
+
+describe("canonicalModelId", () => {
+  it("returns alias when model is in MODEL_ALIASES", () => {
+    expect(canonicalModelId("claude-opus-latest")).toBe("claude-opus-4-7");
+  });
+
+  it("strips 8-digit date suffix from model id (m truthy branch)", () => {
+    expect(canonicalModelId("claude-sonnet-4-6-20250901")).toBe("claude-sonnet-4-6");
+  });
+
+  it("returns raw when no alias and no date suffix (m falsy branch — line 22 false arm)", () => {
+    // A model id with no 8-digit date suffix and no alias → m is null → returns raw
+    expect(canonicalModelId("some-model-without-suffix")).toBe("some-model-without-suffix");
+  });
+
+  it("returns raw for plain model name with no digits at end", () => {
+    expect(canonicalModelId("gpt-4o")).toBe("gpt-4o");
+  });
+});
+
+describe("loadPrices — deepMerge falsy bVal branch", () => {
+  it("override entry with null value does not overwrite bundled entry", async () => {
+    // Write an override file where a key maps to null (falsy bVal in deepMerge)
+    // deepMerge: if (bVal) — false branch means the key is skipped
+    await writeFile(
+      pricesOverridePath(),
+      JSON.stringify({ "claude-sonnet-4-6": null }),
+    );
+    try {
+      const prices = await loadPrices();
+      // The bundled 'claude-sonnet-4-6' entry should still be present
+      // because deepMerge skips null bVal entries
+      expect(prices["claude-sonnet-4-6"]).toBeDefined();
+    } finally {
+      await rm(pricesOverridePath(), { force: true });
+    }
   });
 });

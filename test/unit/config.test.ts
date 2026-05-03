@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, mkdir, writeFile, rm, chmod, readFile, access } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
@@ -116,4 +116,61 @@ describe("loadConfig — error paths", () => {
     const cfg = await loadConfig();
     expect(cfg.admin_api_key).toBe("sk-ant-admin-abc123");
   });
+});
+
+// ---------------------------------------------------------------------------
+// win32 platform branch — skips file-mode check
+// ---------------------------------------------------------------------------
+describe("loadConfig — win32 platform skips mode check", () => {
+  const realPath = configPath();
+  const realDir = dirname(realPath);
+  let backup: string | null = null;
+  let hadConfig = false;
+  let originalPlatform: string;
+
+  beforeEach(async () => {
+    await mkdir(realDir, { recursive: true });
+    try {
+      backup = await readFile(realPath, "utf8");
+      hadConfig = true;
+    } catch {
+      backup = null;
+      hadConfig = false;
+    }
+    if (hadConfig) await rm(realPath, { force: true });
+    // Capture the real platform value
+    originalPlatform = process.platform;
+  });
+
+  afterEach(async () => {
+    // Restore platform
+    Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+    if (hadConfig && backup !== null) {
+      await writeFile(realPath, backup, "utf8");
+      if (process.platform !== "win32") await chmod(realPath, 0o600);
+    } else {
+      try {
+        await access(realPath);
+        await rm(realPath, { force: true });
+      } catch {
+        // already gone
+      }
+    }
+  });
+
+  it.skipIf(process.platform === "win32")(
+    "does not throw for world-readable config when platform is win32 (mode check skipped)",
+    async () => {
+      // Write a world-readable config (would normally throw on POSIX)
+      await writeFile(realPath, JSON.stringify({ default_currency: "usd" }));
+      await chmod(realPath, 0o644);
+
+      // Stub platform to win32
+      Object.defineProperty(process, "platform", { value: "win32", configurable: true });
+
+      // loadConfig should succeed because the platform !== 'win32' check returns false
+      const cfg = await loadConfig();
+      expect(cfg.default_currency).toBe("usd");
+    },
+  );
 });
