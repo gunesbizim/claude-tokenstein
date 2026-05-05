@@ -59,9 +59,9 @@ program
       try {
         const results = await ingestAll(conn, {
           source: opts.source as "claude_code" | "admin_api" | "all",
-          dryRun: opts.dryRun,
-          adminApiKey: cfg.admin_api_key,
-          lookbackDays: cfg.ingest.max_admin_api_lookback_days,
+          ...(opts.dryRun !== undefined && { dryRun: opts.dryRun }),
+          ...(cfg.admin_api_key !== undefined && { adminApiKey: cfg.admin_api_key }),
+          ...(cfg.ingest.max_admin_api_lookback_days !== undefined && { lookbackDays: cfg.ingest.max_admin_api_lookback_days }),
         });
         if (results.claudeCode) {
           const s = results.claudeCode;

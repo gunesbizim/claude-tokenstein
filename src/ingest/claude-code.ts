@@ -127,15 +127,15 @@ export async function ingestFile(
 
     const requestId = parsed.message.id ?? null;
     const lineOffset = i;
-    const textHashHex = requestId === null ? sha256Hex(responseText.slice(0, 512)) : undefined;
-
     const id = messageId({
       sessionId,
       isoTs: ts,
       requestId,
-      filePath: requestId === null ? filePath : undefined,
-      lineOffset: requestId === null ? lineOffset : undefined,
-      textHashHex,
+      ...(requestId === null && {
+        filePath,
+        lineOffset,
+        textHashHex: sha256Hex(responseText.slice(0, 512)),
+      }),
     });
 
     const row = {

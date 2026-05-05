@@ -1,6 +1,6 @@
 {
   "name": "claude-tokenstein",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Track and report Claude token usage from local logs and the Anthropic Admin API",
   "type": "module",
   "engines": {
@@ -16,7 +16,7 @@
   },
   "files": [
     "bin",
-    "src",
+    "dist",
     "commands",
     "hooks",
     "plugin.json",
@@ -26,6 +26,8 @@
     "CHANGELOG.md"
   ],
   "scripts": {
+    "build": "tsc --project tsconfig.build.json && node scripts/build-copy.js",
+    "prepublishOnly": "npm run build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"*.md\"",

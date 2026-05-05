@@ -29,7 +29,7 @@ export async function ingestClaudeCode(
 
   for await (const filePath of globProjects()) {
     total.filesScanned++;
-    const fileStats = await ingestFile(conn, filePath, { dryRun: opts.dryRun });
+    const fileStats = await ingestFile(conn, filePath, { ...(opts.dryRun !== undefined && { dryRun: opts.dryRun }) });
     if (fileStats.linesRead === 0 && fileStats.messagesInserted === 0) {
       total.filesSkipped++;
     }
@@ -67,7 +67,7 @@ export async function ingestAll(
   } = {};
 
   if (opts.source === "claude_code" || opts.source === "all") {
-    results.claudeCode = await ingestClaudeCode(conn, { dryRun: opts.dryRun });
+    results.claudeCode = await ingestClaudeCode(conn, { ...(opts.dryRun !== undefined && { dryRun: opts.dryRun }) });
   }
 
   if (opts.source === "admin_api" || opts.source === "all") {
@@ -77,7 +77,7 @@ export async function ingestAll(
       results.adminApi = await ingestAdminApi(conn, {
         apiKey: opts.adminApiKey,
         lookbackDays: opts.lookbackDays ?? 30,
-        dryRun: opts.dryRun,
+        ...(opts.dryRun !== undefined && { dryRun: opts.dryRun }),
       });
     }
   }
